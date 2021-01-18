@@ -99,5 +99,10 @@ for (i = 0; i < goodx.length; i++) {
 	makeRectangle(goodx[i]-(ROI_width/2), goody[i]-(ROI_height/2), ROI_width, ROI_height);
 	roiManager("Add");
 }
+//Rename ROIs for easy selection of ROIs
+for (i = 0; i < goodx.length; i++) {
+	roiManager("Select", i);
+	roiManager("Rename", i+1);
+}
 roiManager("Show All with labels");
 
