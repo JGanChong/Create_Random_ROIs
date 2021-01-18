@@ -8,109 +8,96 @@
  * January 2021
  */
 
+
+
+ 
 //User Variables:
-ROI_height = 50; //Height of desired ROI
-ROI_width = 100; //Width of desidred ROI
-min_distance = 50; //Minimum distance between ROI
+ROI_height = 550; //Height of desired ROI
+ROI_width = 550; //Width of desidred ROI
+min_distance = 600; //Minimum distance between ROI
 number_of_ROI = 50; //Number of ROIs to create
+Use_BorderToBorder = true; //Set true if you want the minimum distance be calculated border-border isntead of center to center
+max_try = 500; //How many iterations to go over before deciding its too much
 
+//chanage calculation if border to border is true
+if (Use_BorderToBorder == true) {
+	min_distance = min_distance + ((sqrt(pow(ROI_height,2)+pow(ROI_width,2)))/2);
+}
 
-//get width and height of original image
+//get image dimensions
 getDimensions(width, height, channels, slices, frames);
 
-//get name of the original image
-title=getTitle();
+//set new max width and height so ROIs are not outside image
+nMaxWidth = width - (2*ROI_width);
+nMaxHeight = height - (2*ROI_height);
 
-//set batchmode on
-setBatchMode(true);
-
-//create Array to store the ROIs
+//Create Array to store good ROI centers
 goodx = newArray;
 goody = newArray;
 
-//Create dummy image
-newImage("ROI_img",  "8-bit black", width, height, 1);
-setOption("BlackBackground", true);
-setBackgroundColor(0, 0, 0);
-setForegroundColor(255, 255,255);
-
-//Create padding for the image so ROIs are not outside boundary
-makeRectangle(ROI_width, ROI_height, width-(2*ROI_width), height-(2*ROI_height));
-run("Fill", "slice");
-run("Select None");
-run("Auto Threshold", "method=Default white");
-run("Create Selection");
-
-//create pseudo ROIs width and height
-nwidth = (2*ROI_width)+min_distance;
-nheight = (2*ROI_height)+min_distance;
+//create first point
+randx = (random*nMaxWidth)+ROI_width;
+randy = (random*nMaxHeight)+ROI_height;
+randx = round(randx);
+randy = round(randy);
+goodx[0] = randx;
+goody[0] = randy;
 
 
-//Iterate to create the ROIs
-for (i = 0; i < number_of_ROI; i++) {
-	
-	//Error message if the macro couldnt fit the ROis in the image
-	if(selectionType == -1){
-		close("ROI_img");
-		exit("This random iteration did not find a way to fit all ROIs."+"\n"+"Please decrease ROI size/Minimum distance."+"\n"+"If you believe they should fit, rerun macro again until it finds the correct combination.");
+//Iterate to find other points that match user settings
+for (i = 1; i < number_of_ROI; i++) {
+	pass = 0;
+	count = 0;
+	try = 0;
+
+	//Loop over randomly generated X and Y
+	while (pass == 0) {
+		try++;
+		randx = (random*nMaxWidth)+ROI_width;
+		randy = (random*nMaxHeight)+ROI_height;
+		
+		randx = round(randx);
+		randy = round(randy);
+
+		//Check that randomly generated (x,y) satisfy distance
+		for (x = 0; x < goodx.length; x++) {
+			
+			distance = sqrt( pow(randx-goodx[x],2) + pow(randy-goody[x],2) );
+
+
+			if (distance > min_distance) {
+				count++;				
+			}
+			
+			
+		}
+		
+		if (count == goodx.length) {
+			goodx[i] = randx;
+			goody[i] = randy;
+			
+			pass = 1;
+		}
+		else {
+			count = 0;
+		}
+
+		//exit if iterations exceed user set value
+		if (try == max_try) {
+			exit("No arrangement found to accomodate user settings after "+try+" trials." );	
+		}
 	}
-
-	//get list of available X and Y points
-	Roi.getContainedPoints(xpoints, ypoints);	
-
-	//Randomly selects a point
-	rand = random*xpoints.length;
-	rand = round(rand);
 	
-	randx = xpoints[rand];
-	randy = ypoints[rand];
-
-	//Add those points to array to create ROIs
-	goodx[i] = randx;
-	goody[i] = randy;
-
-	x = randx-(nwidth)/2;
-	y = randy-(nheight)/2;
-
-	//Create pseudo ROI
-	makeRectangle(x, y,nwidth ,nheight );
-
-	//Remove from avaialbe points
-	run("Clear", "slice");	
-	run("Select None");
-	run("Create Selection");
 
 	
 }
 
-
-//Closes dummy image
-close("ROI_img");
-//Exits Batch mode
-setBatchMode("exit and display");
-
-
-//Runs the Roi Manager and resets it
-run("ROI Manager...");
+//Add ROIs to manager
 roiManager("reset")
-
-//Creates the ROIs in the original image
-selectImage(title);
-
+run("ROI Manager...");
 for (i = 0; i < goodx.length; i++) {
-
-	x = goodx[i]-(ROI_width/2);
-	y = goody[i]-(ROI_height/2);
-	
-	makeRectangle(x, y, ROI_width, ROI_height);
+	makeRectangle(goodx[i]-(ROI_width/2), goody[i]-(ROI_height/2), ROI_width, ROI_height);
 	roiManager("Add");
-
 }
-//Rename ROIs for easy selection of ROIs
-for (i = 0; i < goodx.length; i++) {
-	roiManager("Select", i);
-	roiManager("Rename", i+1);
-}
-
-roiManager("Show All without labels");
 roiManager("Show All with labels");
+
