@@ -12,11 +12,11 @@
 
  
 //User Variables:
-ROI_height = 550; //Height of desired ROI
-ROI_width = 550; //Width of desidred ROI
-min_distance = 600; //Minimum distance between ROI
+ROI_height = 100; //Height of desired ROI in Pixels
+ROI_width = 100; //Width of desidred ROI in Pixels
+min_distance = 125; //Minimum distance between ROI in Pixels
 number_of_ROI = 50; //Number of ROIs to create
-Use_BorderToBorder = true; //Set true if you want the minimum distance be calculated border-border isntead of center to center
+Use_BorderToBorder = true; //Set true if you want the minimum distance be calculated border-border instead of center to center
 max_try = 500; //How many iterations to go over before deciding its too much
 
 //chanage calculation if border to border is true
