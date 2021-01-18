@@ -9,7 +9,7 @@
  */
 
 
-
+setOption("ExpandableArrays", true);
  
 //User Variables:
 ROI_height = 100; //Height of desired ROI in Pixels
